@@ -3,18 +3,23 @@
 " yank it via plugin osc-yank.
 "
 " VARIABLES
+" osc_yank_regmon_enable: whether this plugin is enabled
+"   default: 1
 " osc_yank_regmon_reg: the register to monitor
-"   default: 'z'
+"   default: unamed register
 
-fun s:get_monitored_reg()
-    return get(g:, 'osc_yank_regmon_reg', 'z')
+fun s:get_osc_yank_regmon_enable()
+    return get(g:, 'osc_yank_regmon_enable', 1)
+endfun
+
+fun s:get_osc_yank_regmon_reg()
+    return get(g:, 'osc_yank_regmon_reg', '')
 endfun
 
 fun s:process(regname)
-    if a:regname != s:get_monitored_reg()
-        return
+    if a:regname == s:get_osc_yank_regmon_reg()
+        silent call OSCYankString(getreg(a:regname))
     endif
-    call OSCYankString(getreg(a:regname))
 endfun
 
 fun s:has_osc_yank()
@@ -22,12 +27,13 @@ fun s:has_osc_yank()
 endfun
 
 fun s:configure_buf_reg_hook()
+    if !s:get_osc_yank_regmon_enable() || !s:has_osc_yank()
+        return
+    endif
+
     augroup OSCYankRegMonBuf
         au!
-        let mon_reg = s:get_monitored_reg()
-        if mon_reg != '' && s:has_osc_yank()
-            autocmd TextYankPost * call s:process(v:event['regname'])
-        endif
+        autocmd TextYankPost * call s:process(v:event['regname'])
     augroup END
 endfun
 
